@@ -2,121 +2,20 @@ name: Dart
 
 on:
   push:
-    branches: [main]
+    branches: [ master ]
   pull_request:
-    branches: [main]
-  schedule:
-  - cron: "0 0 * * 0" # Run every Sunday at 00:00.
+    branches: [ master ]
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        # Test latest stable, beta, dev channels + last stable release
-        # prior to the introduction of the unified `dart` developer tool.
-        sdk: [stable, beta, dev, 2.9.3, 2.12.0-29.10.beta]
-        flavor: [release]
+  build:
+    runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: ./
-        with:
-          sdk: ${{ matrix.sdk }}
+      - uses: actions/checkout@v2
+      - uses: dart-lang/setup-dart@v1.3
 
-      - name: Print DART_HOME
-        shell: bash
-        run: echo "Dart SDK installed in $DART_HOME"
+      - name: Install dependencies
+        run: dart pub get
 
-      - name: Run hello world
-        run: |
-          echo "main() { print('hello world'); }" > hello.dart
-          dart hello.dart
-
-  test_raw:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        # Test latest stable, beta, dev, and main channels + last stable release
-        # prior to the introduction of the unified `dart` developer tool, using
-        # raw (unsigned) bits.
-        sdk: [stable, beta, dev, main, 2.9.3, 2.12.0-29.10.beta]
-        flavor: [raw]
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ./
-        with:
-          sdk: ${{ matrix.sdk }}
-
-      - name: Run hello world
-        run: |
-          echo "main() { print('hello world'); }" > hello.dart
-          dart hello.dart
-
-  test_arch:
-    runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        sdk: [stable, beta, dev, 2.9.3, 2.12.0-29.10.beta]
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ./
-        with:
-          sdk: ${{ matrix.sdk }}
-          architecture: ia32
-
-      - name: Run hello world
-        run: |
-          echo "main() { print('hello world'); }" > hello.dart
-          dart hello.dart
-          
-  test_pub:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        sdk: [stable, beta]
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ./
-        with:
-          sdk: ${{ matrix.sdk }}
-
-      - name: Global activate + run
-        run: |
-          dart pub global activate stagehand
-          mkdir testapp
-          cd testapp
-          stagehand console-simple
-          dart pub get
-          dart run
-
-  test_test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        # Test latest stable, beta, dev channels
-        sdk: [stable, beta, dev]
-        flavor: [release]
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ./
-        with:
-          sdk: ${{ matrix.sdk }}
-      
-      - id: dart_pub_upgrade
-        name: Dart pub upgrade
-        working-directory: example
-        run: dart pub upgrade
-        
-      - name: Dart test
-        if: "always() && steps.dart_pub_upgrade.conclusion == 'success'"
-        working-directory: example
-        run: dart test
+      - name: Hello world
+        run: dart bin/hello_world.dart
